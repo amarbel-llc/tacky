@@ -7,50 +7,48 @@ code in this repository.
 
 Tacky is a macOS CLI tool for managing the pasteboard (clipboard). It supports
 copying files/stdin to the pasteboard with specific UTI (Uniform Type
-Identifier) types and pasting from the pasteboard. Built with Python using
-PyObjC bindings to macOS AppKit/Foundation frameworks.
+Identifier) types and pasting from the pasteboard. Built with Rust using objc2
+crates for macOS AppKit/Foundation bindings.
 
 ## Build & Development
 
-- **Package manager:** uv
-- **Build system:** hatchling (configured in `pyproject.toml`)
-- **Dev environment:** direnv + Nix flake
-  (`github:friedenberg/dev-flake-templates?dir=python`)
+- **Language:** Rust (edition 2024)
+- **Dev environment:** direnv + Nix flake (rust-overlay for toolchain)
 - **Task runner:** just
 
 ### Commands
 
 ``` bash
-uv build              # Build the package
-uv publish            # Publish to PyPI
-just deploy           # Build + publish
-just release          # Bump version, commit, deploy, push
+just build            # cargo build
+just run <args>       # cargo run -- <args>
+just check            # cargo clippy + cargo fmt --check
+just fmt              # cargo fmt
+just watch            # cargo watch -x build
 ```
 
-### Running locally
+### CLI Usage
 
 ``` bash
-uv run tacky copy -i public.text <file>    # Copy file to pasteboard
-echo "text" | uv run tacky copy -i public.text -   # Copy stdin
-uv run tacky paste -u public.text          # Paste from pasteboard
-uv run tacky paste --list                  # List available UTI types
+tacky copy -i public.html <file>              # Copy file to pasteboard
+echo "text" | tacky copy -i public.utf8-plain-text -  # Copy stdin
+tacky paste -u public.utf8-plain-text         # Paste from pasteboard
+tacky paste --list                            # List available UTI types
 ```
 
 ## Architecture
 
-Single-module Python package. All logic lives in `src/tacky/__init__.py`:
+Single-binary Rust project. All logic lives in `src/main.rs`:
 
-- **CLI layer** (`main`, `cli_copy`, `cli_paste`, `cli_list_uti`):
-  argparse-based with `copy` and `paste` subcommands
-- **Module API** (`copy`, `paste`, `list_uti`, `write_pasteboard`): Can be
-  imported and used programmatically
-- **UTI resolution** (`uti_from_argument`): Supports both literal UTI strings
-  (e.g. `public.text`) and Apple constants (e.g. `kUTTypePDF`,
-  `NSPasteboardType*`) by dynamically loading them from the AppKit bundle
+- **CLI** (`Cli`, `Commands`): clap-derive with `copy` and `paste` subcommands
+- **`copy`**: reads files or stdin, writes data to `NSPasteboard` under
+  specified UTI types via `declareTypes_owner` and `setData_forType`
+- **`paste`**: reads a specific UTI from `NSPasteboard` via `stringForType`
+- **`list_uti`**: enumerates UTI types on the pasteboard via `pasteboardItems`
 
-The entrypoint is `tacky:main` (defined in `pyproject.toml [project.scripts]`).
+Users pass raw UTI strings (e.g. `public.html`, `com.adobe.pdf`) directly.
 
 ## Key Dependencies
 
-- `pyobjc-core` and `pyobjc-framework-cocoa`: Python-to-Objective-C bridge for
-  macOS pasteboard access. This is macOS-only.
+- `clap`: CLI argument parsing with derive macros
+- `objc2`, `objc2-foundation`, `objc2-app-kit`: Rust bindings to macOS
+  Objective-C frameworks for pasteboard access. macOS-only.

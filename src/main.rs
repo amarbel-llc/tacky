@@ -66,8 +66,10 @@ fn copy(entries: &[(&str, &str)]) {
     unsafe {
         let pb = NSPasteboard::generalPasteboard();
 
-        let types: Vec<Retained<NSString>> =
-            entries.iter().map(|(uti, _)| NSString::from_str(uti)).collect();
+        let types: Vec<Retained<NSString>> = entries
+            .iter()
+            .map(|(uti, _)| NSString::from_str(uti))
+            .collect();
         let type_refs: Vec<&NSString> = types.iter().map(|s| s.as_ref()).collect();
         let ns_types = NSArray::from_slice(&type_refs);
         pb.declareTypes_owner(&ns_types, None::<&AnyObject>);
