@@ -128,3 +128,8 @@ dmypy.json
 .pyre/
 .gitsecret/keys/random_seed
 .env
+
+
+# Added by cargo
+
+/target
