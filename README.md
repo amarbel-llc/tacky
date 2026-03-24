@@ -1,11 +1,25 @@
-# Usage
+# tacky
 
-## copying
+A CLI to manage the macOS pasteboard.
 
--   copy file to pasteboard as UTI: `tacky copy -i public.text <name of file>`
--   copy stdin to pasteboard as UTI: `tacky copy -i public.text -`
+## Install
 
-## pasting
+``` bash
+cargo install --path .
+```
 
--   paste from pasteboard to stdout as UTI: `tacky paste -u public.text`
--   list available UTI's from pasteboard to stdout: `tacky paste --list`
+## Usage
+
+### Copying
+
+- Copy file to pasteboard as UTI: `tacky copy -i public.html index.html`
+- Copy stdin to pasteboard as UTI:
+  `echo "hello" | tacky copy -i public.utf8-plain-text -`
+- Copy multiple items:
+  `tacky copy -i public.html index.html -i public.utf8-plain-text fallback.txt`
+
+### Pasting
+
+- Paste from pasteboard to stdout as UTI:
+  `tacky paste -u public.utf8-plain-text`
+- List available UTIs from pasteboard to stdout: `tacky paste --list`
