@@ -33,6 +33,13 @@
         };
       in
       {
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "tacky";
+          version = "0.1.0";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+        };
+
         devShells.default = pkgs.mkShell {
           packages = [
             rustToolchain
