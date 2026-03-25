@@ -2,51 +2,47 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+
+  flakehub-publish:
+    runs-on: "ubuntu-latest"
+    permissions:
+      id-token: "write"
+      contents: "read"
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "DeterminateSystems/nix-installer-action@main"
+        with:
+          determinate: true
+      - uses: "DeterminateSystems/flakehub-push@main"
+        with:
+          name: "amarbel-llc/tacky"
+          rolling: true
+          visibility: "public"
+          include-output-paths: true
+          directory: ./
+
+  build-nix-package:
     strategy:
       matrix:
         include:
-          - os: macos-13
-            system: x86_64-darwin
-          - os: macos-latest
+          - os: macos-15
             system: aarch64-darwin
-
     runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: DeterminateSystems/nix-installer-action@main
-
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Check flake
-        run: nix flake check
-
-      - name: Build
-        run: nix build --show-trace
-
-  flakehub:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
-
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: DeterminateSystems/nix-installer-action@main
-
-      - uses: DeterminateSystems/flakehub-push@main
         with:
-          visibility: public
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
+      - run: nix build

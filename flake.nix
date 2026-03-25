@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    utils.url = "github:numtide/flake-utils";
+    utils.url = "https://flakehub.com/f/numtide/flake-utils/*";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
