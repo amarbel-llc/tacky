@@ -113,7 +113,7 @@ clean-nix:
 # Rewrite TACKY_VERSION in version.env. Staging and committing is release's responsibility.
 [group("maint")]
 bump-version new_version:
-    sed -E -i "" "s/^(export TACKY_VERSION)=.*/\1={{ new_version }}/" version.env
+    sed -E -i'' "s/^(export TACKY_VERSION)=.*/\1={{ new_version }}/" version.env
 
 # Create a signed annotated tag from the current version.env and push it.
 [group("maint")]
