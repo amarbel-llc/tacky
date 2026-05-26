@@ -47,11 +47,7 @@ fn main() {
 
     match cli.command {
         Some(Commands::Version) => {
-            println!(
-                "tacky {}+{}\n\nCOMPONENT            VERSION      REV",
-                env!("TACKY_VERSION"),
-                env!("TACKY_COMMIT"),
-            );
+            println!("tacky {}+{}", env!("TACKY_VERSION"), env!("TACKY_COMMIT"));
         }
         Some(Commands::Copy { item }) => {
             let entries: Vec<(&str, &str)> = item
