@@ -1,16 +1,119 @@
+default: validate lint build test
 
-build:
-  cargo build
+# ---- pre-build --------------------------------------------------------------
 
-run *args:
-  cargo run -- {{args}}
+validate: validate-devshell
 
-check:
-  cargo clippy
-  cargo fmt --check
+# Verify the devShell evaluates and builds without errors. Catches
+# rust-overlay / nixpkgs follows regressions that the prod-binary build
+# can mask. No store-output usage --- just a build-check.
+[group("pre-build")]
+validate-devshell:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
+    nix build --no-link --print-build-logs ".#devShells.${system}.default"
 
-fmt:
-  cargo fmt
+lint: lint-fmt lint-clippy
 
-watch:
-  cargo watch -x build
+# Read-only formatting gate: builds the `checks.formatting` derivation,
+# which runs treefmt against a /nix/store snapshot of the source tree
+# and fails if anything would change. Does NOT modify files in the
+# worktree --- the modifying counterpart is `codemod-fmt-treefmt`.
+[group("pre-build")]
+lint-fmt:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
+    nix build --no-link --print-build-logs ".#checks.${system}.formatting"
+
+[group("pre-build")]
+lint-clippy:
+    cargo clippy -- -D warnings
+
+# ---- build ------------------------------------------------------------------
+
+build: build-cargo build-nix
+
+[group("build")]
+build-cargo:
+    cargo build
+
+# Sandboxed release build via the flake's packages.default. Used by CI.
+[group("build")]
+build-nix:
+    nix build --print-build-logs --no-link
+
+# ---- post-build -------------------------------------------------------------
+
+test: test-cargo test-bats
+
+[group("post-build")]
+test-cargo:
+    cargo test
+
+# Authoritative bats lane: runs every .bats file inside the nix sandbox
+# against a freshly-built `tacky` binary. Tests use isolated, uniquely
+# named NSPasteboards (via the --pasteboard flag) so they never touch
+# the user's real clipboard.
+[group("post-build")]
+test-bats:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
+    nix build --no-link --print-build-logs ".#packages.${system}.bats-default"
+
+# Run only the bats files carrying `# bats file_tags=<tag>`. Tags are
+# auto-discovered at flake-eval time — see bats.nix.
+[group("post-build")]
+test-bats-tags tag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
+    nix build --no-link --print-build-logs ".#packages.${system}.bats-{{ tag }}"
+
+# Run bats against the host-built `tacky` binary, OUTSIDE the nix
+# sandbox. Necessary for pasteboard-tagged tests because the macOS
+# nix sandbox can't reach the per-user pboard server. Builds the
+# binary via `nix build` (sandboxed), reads the store-path output,
+# and runs bats against it under the host's bats from the devShell.
+# Pass file globs as args to run a subset, e.g.
+# `just test-bats-local pasteboard.bats`.
+[group("post-build")]
+test-bats-local *targets="*.bats":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin=$(nix build --no-link --print-out-paths .#tacky)/bin/tacky
+    TACKY_BIN="$bin" \
+        BATS_TEST_TIMEOUT=10 \
+        bats zz-tests_bats/{{ targets }}
+
+# ---- codemod ----------------------------------------------------------------
+
+codemod-fmt: codemod-fmt-treefmt
+
+[group("codemod")]
+codemod-fmt-treefmt:
+    nix fmt
+
+# ---- maintenance ------------------------------------------------------------
+
+clean: clean-cargo clean-nix
+
+[group("maintenance")]
+clean-cargo:
+    cargo clean
+
+[group("maintenance")]
+clean-nix:
+    rm -f result
+
+# ---- ungrouped: developer-loop convenience (not part of `default`) ----------
+
+# Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool.
+run-cargo *args:
+    cargo run -- {{ args }}
+
+# Auto-rebuild on file change. Ungrouped because it's an ad-hoc dev tool.
+watch-cargo:
+    cargo watch -x build

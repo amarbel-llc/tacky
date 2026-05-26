@@ -9,6 +9,13 @@ use objc2_foundation::{NSArray, NSData, NSString};
 #[derive(Parser)]
 #[command(name = "tacky")]
 struct Cli {
+    /// Named pasteboard to operate on. Defaults to the general pasteboard
+    /// (system clipboard). Pass a unique name to get an isolated pasteboard
+    /// (created lazily by macOS) — used by tests to avoid clobbering the
+    /// shared clipboard.
+    #[arg(short = 'p', long = "pasteboard", global = true)]
+    pasteboard: Option<String>,
+
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -34,6 +41,7 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
+    let pb_name = cli.pasteboard.as_deref();
 
     match cli.command {
         Some(Commands::Copy { item }) => {
@@ -41,13 +49,13 @@ fn main() {
                 .chunks(2)
                 .map(|c| (c[0].as_str(), c[1].as_str()))
                 .collect();
-            copy(&entries);
+            copy(pb_name, &entries);
         }
         Some(Commands::Paste { list: true, .. }) => {
-            list_uti();
+            list_uti(pb_name);
         }
         Some(Commands::Paste { uti: Some(uti), .. }) => {
-            paste(&uti);
+            paste(pb_name, &uti);
         }
         Some(Commands::Paste {
             uti: None,
@@ -62,9 +70,22 @@ fn main() {
     }
 }
 
-fn copy(entries: &[(&str, &str)]) {
+/// Returns the named pasteboard, or the general (system clipboard) pasteboard
+/// if `name` is `None`. Named pasteboards are created lazily by macOS and
+/// persist in the per-user pboard server until explicitly released.
+fn get_pasteboard(name: Option<&str>) -> Retained<NSPasteboard> {
+    match name {
+        Some(n) => {
+            let ns_name = NSString::from_str(n);
+            NSPasteboard::pasteboardWithName(&ns_name)
+        }
+        None => NSPasteboard::generalPasteboard(),
+    }
+}
+
+fn copy(pb_name: Option<&str>, entries: &[(&str, &str)]) {
     unsafe {
-        let pb = NSPasteboard::generalPasteboard();
+        let pb = get_pasteboard(pb_name);
 
         let types: Vec<Retained<NSString>> = entries
             .iter()
@@ -100,8 +121,8 @@ fn copy(entries: &[(&str, &str)]) {
     }
 }
 
-fn paste(uti: &str) {
-    let pb = NSPasteboard::generalPasteboard();
+fn paste(pb_name: Option<&str>, uti: &str) {
+    let pb = get_pasteboard(pb_name);
     let ns_uti = NSString::from_str(uti);
 
     if let Some(items) = pb.pasteboardItems() {
@@ -113,10 +134,13 @@ fn paste(uti: &str) {
             }
         }
     }
+
+    eprintln!("error: no item on pasteboard with UTI {uti}");
+    std::process::exit(1);
 }
 
-fn list_uti() {
-    let pb = NSPasteboard::generalPasteboard();
+fn list_uti(pb_name: Option<&str>) {
+    let pb = get_pasteboard(pb_name);
 
     if let Some(items) = pb.pasteboardItems() {
         for i in 0..items.count() {

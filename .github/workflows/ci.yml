@@ -1,16 +1,12 @@
 name: CI
-
 on:
   push:
     branches:
       - master
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-
   flakehub-publish:
     runs-on: "ubuntu-latest"
     permissions:
@@ -28,7 +24,6 @@ jobs:
           visibility: "public"
           include-output-paths: true
           directory: ./
-
   build-nix-package:
     strategy:
       matrix:

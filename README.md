@@ -4,7 +4,7 @@ A CLI to manage the macOS pasteboard.
 
 ## Install
 
-``` bash
+```bash
 cargo install --path .
 ```
 

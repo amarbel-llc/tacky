@@ -14,6 +14,18 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # bats helper libraries (bats-support, bats-assert, bats-emo,
+    # bats-island) bundled as `bats-libs` with a `batsLibPath` passthru,
+    # plus the `batsLane` sandboxed-lane builder under `bats.lib.${system}`.
+    # batsLane was migrated out of amarbel-llc/nixpkgs's overlay into the
+    # bats flake (amarbel-llc/nixpkgs#16) — consume it here, not via pkgs.
+    bats = {
+      url = "github:amarbel-llc/bats";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -23,6 +35,8 @@
       nixpkgs-master,
       utils,
       rust-overlay,
+      treefmt-nix,
+      bats,
       ...
     }:
     (utils.lib.eachDefaultSystem (
@@ -39,14 +53,45 @@
             "rustfmt"
           ];
         };
-      in
-      {
-        packages.default = pkgs.rustPlatform.buildRustPackage {
+
+        tacky = pkgs.rustPlatform.buildRustPackage {
           pname = "tacky";
           version = "0.1.0";
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
         };
+
+        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+
+        bats-libs = bats.packages.${system}.bats-libs;
+
+        # Filter zz-tests_bats so bats-lane store paths only change when
+        # actual test inputs change — not on unrelated repo edits.
+        tests-src = pkgs.lib.cleanSourceWith {
+          src = ./zz-tests_bats;
+          filter =
+            path: type:
+            let
+              bn = builtins.baseNameOf path;
+            in
+            type == "directory"
+            || pkgs.lib.hasSuffix ".bats" bn
+            || bn == "common.bash"
+            || bn == "setup_suite.bash";
+        };
+
+        batsLib = import ./bats.nix {
+          inherit pkgs bats-libs tacky;
+          batsLane = bats.lib.${system}.batsLane;
+          batsSrc = tests-src;
+        };
+      in
+      {
+        packages = {
+          default = tacky;
+          inherit tacky;
+        }
+        // batsLib.batsLaneOutputs;
 
         devShells.default = pkgs.mkShell {
           packages = [
@@ -54,7 +99,19 @@
             pkgs.rust-analyzer
             pkgs.cargo-watch
             pkgs.uv
+            pkgs.bats
           ];
+          BATS_LIB_PATH = bats-libs.batsLibPath;
+        };
+
+        # `nix fmt` — runs treefmt across the worktree using ./treefmt.nix.
+        formatter = treefmtEval.config.build.wrapper;
+
+        # `nix flake check` — read-only formatting gate (sandbox-pure)
+        # plus the default bats lane.
+        checks = {
+          formatting = treefmtEval.config.build.check self;
+          bats-default = batsLib.batsLaneOutputs.bats-default;
         };
       }
     ));

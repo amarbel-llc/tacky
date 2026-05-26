@@ -1,5 +1,32 @@
 {
   "nodes": {
+    "bats": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixpkgs-master": [
+          "nixpkgs-master"
+        ],
+        "treefmt-nix": "treefmt-nix",
+        "utils": [
+          "utils"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779730883,
+        "narHash": "sha256-WxLVRfjzZekrSnTtcFFE4uIDPwpNSE/3Y/ZX+8rtOXc=",
+        "owner": "amarbel-llc",
+        "repo": "bats",
+        "rev": "e1f442956e5229877fc7c346229b27470de86f6e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amarbel-llc",
+        "repo": "bats",
+        "type": "github"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": [
@@ -60,7 +87,7 @@
         "flake-parts": "flake-parts",
         "nixpkgs-master": "nixpkgs-master",
         "systems": "systems",
-        "treefmt-nix": "treefmt-nix"
+        "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
         "lastModified": 1779730058,
@@ -110,10 +137,11 @@
     },
     "root": {
       "inputs": {
+        "bats": "bats",
         "nixpkgs": "nixpkgs",
         "nixpkgs-master": "nixpkgs-master_2",
         "rust-overlay": "rust-overlay",
-        "treefmt-nix": "treefmt-nix_2",
+        "treefmt-nix": "treefmt-nix_3",
         "utils": "utils"
       }
     },
@@ -170,6 +198,27 @@
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": [
+          "bats",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775636079,
+        "narHash": "sha256-pc20NRoMdiar8oPQceQT47UUZMBTiMdUuWrYu2obUP0=",
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "rev": "790751ff7fd3801feeaf96d7dc416a8d581265ba",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "treefmt-nix_2": {
+      "inputs": {
+        "nixpkgs": [
           "nixpkgs",
           "nixpkgs-master"
         ]
@@ -188,7 +237,7 @@
         "type": "github"
       }
     },
-    "treefmt-nix_2": {
+    "treefmt-nix_3": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
