@@ -42,6 +42,13 @@
     (utils.lib.eachDefaultSystem (
       system:
       let
+        tackyVersion =
+          let
+            raw = builtins.readFile ./version.env;
+            m = builtins.match ".*export TACKY_VERSION=([^\n]+).*" raw;
+          in
+          builtins.elemAt m 0;
+
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ (import rust-overlay) ];
@@ -56,7 +63,7 @@
 
         tacky = pkgs.rustPlatform.buildRustPackage {
           pname = "tacky";
-          version = "0.1.0";
+          version = tackyVersion;
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
         };
@@ -100,6 +107,7 @@
             pkgs.cargo-watch
             pkgs.uv
             pkgs.bats
+            pkgs.gum
           ];
           BATS_LIB_PATH = bats-libs.batsLibPath;
         };

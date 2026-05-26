@@ -108,6 +108,50 @@ clean-cargo:
 clean-nix:
     rm -f result
 
+# ---- maint ------------------------------------------------------------------
+
+# Rewrite TACKY_VERSION in version.env. Staging and committing is release's responsibility.
+[group("maint")]
+bump-version new_version:
+    sed -E -i "" "s/^(export TACKY_VERSION)=.*/\1={{ new_version }}/" version.env
+
+# Create a signed annotated tag from the current version.env and push it.
+[group("maint")]
+tag message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . version.env
+    tag="v${TACKY_VERSION:?missing TACKY_VERSION in version.env}"
+    git tag -s -m "{{ message }}" "$tag"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+
+# Orchestrate a full release: bump version.env, commit, tag, gh release create.
+[group("maint")]
+release new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" != "master" ]]; then
+        gum log --level error "release only allowed from master (on '$branch')"
+        exit 1
+    fi
+    prev=$(git tag --sort=-v:refname -l "v*" | head -1)
+    header="release v{{ new_version }}"
+    if [[ -n "$prev" ]]; then
+        summary=$(git log --format='- %s' "$prev"..HEAD)
+        msg="$header"$'\n\n'"$summary"
+    else
+        msg="$header"
+    fi
+    just bump-version "{{ new_version }}"
+    git add version.env
+    git commit -m "$header"
+    just tag "$msg"
+    gh release create "v{{ new_version }}" --title "$header" --notes "$msg"
+
 # ---- ungrouped: developer-loop convenience (not part of `default`) ----------
 
 # Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool.
