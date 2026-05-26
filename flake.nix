@@ -61,11 +61,14 @@
           ];
         };
 
+        tackyCommit = self.shortRev or self.dirtyShortRev or "dirty";
+
         tacky = pkgs.rustPlatform.buildRustPackage {
           pname = "tacky";
           version = tackyVersion;
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
+          env.TACKY_COMMIT = tackyCommit;
         };
 
         treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;

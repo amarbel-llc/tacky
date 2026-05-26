@@ -7,7 +7,7 @@ use objc2_app_kit::{NSPasteboard, NSPasteboardItem};
 use objc2_foundation::{NSArray, NSData, NSString};
 
 #[derive(Parser)]
-#[command(name = "tacky")]
+#[command(name = "tacky", disable_version_flag = true)]
 struct Cli {
     /// Named pasteboard to operate on. Defaults to the general pasteboard
     /// (system clipboard). Pass a unique name to get an isolated pasteboard
@@ -22,6 +22,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Print version and build info
+    Version,
     /// Copy data to the pasteboard
     Copy {
         /// UTI type and file pairs (use - for stdin)
@@ -44,6 +46,13 @@ fn main() {
     let pb_name = cli.pasteboard.as_deref();
 
     match cli.command {
+        Some(Commands::Version) => {
+            println!(
+                "tacky {}+{}\n\nCOMPONENT            VERSION      REV",
+                env!("TACKY_VERSION"),
+                env!("TACKY_COMMIT"),
+            );
+        }
         Some(Commands::Copy { item }) => {
             let entries: Vec<(&str, &str)> = item
                 .chunks(2)
