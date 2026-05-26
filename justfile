@@ -149,8 +149,16 @@ release new_version:
     just bump-version "{{ new_version }}"
     git add version.env
     git commit -m "$header"
-    just tag "$msg"
-    gh release create "v{{ new_version }}" --title "$header" --notes "$msg"
+    tag="v{{ new_version }}"
+    msgfile=$(mktemp)
+    printf '%s' "$msg" > "$msgfile"
+    git tag -s -F "$msgfile" "$tag"
+    rm -f "$msgfile"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+    gh release create "$tag" --title "$header" --notes "$msg"
 
 # ---- ungrouped: developer-loop convenience (not part of `default`) ----------
 
