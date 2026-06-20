@@ -54,6 +54,16 @@
           overlays = [ (import rust-overlay) ];
         };
 
+        inherit (pkgs) lib;
+
+        # tacky links macOS-only objc2/AppKit frameworks, so the binary
+        # and every bats lane (which builds it) only build on Darwin.
+        # On other systems (e.g. a NixOS host) those outputs are omitted
+        # so `nix build` / `nix flake check` don't try — and fail — to
+        # compile a macOS binary. The devShell, formatter, and formatting
+        # check stay available everywhere for editing on any host.
+        isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
+
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
           extensions = [
             "rust-src"
@@ -97,11 +107,13 @@
         };
       in
       {
-        packages = {
-          default = tacky;
-          inherit tacky;
-        }
-        // batsLib.batsLaneOutputs;
+        packages = lib.optionalAttrs isDarwin (
+          {
+            default = tacky;
+            inherit tacky;
+          }
+          // batsLib.batsLaneOutputs
+        );
 
         devShells.default = pkgs.mkShell {
           packages = [
@@ -122,6 +134,8 @@
         # plus the default bats lane.
         checks = {
           formatting = treefmtEval.config.build.check self;
+        }
+        // lib.optionalAttrs isDarwin {
           bats-default = batsLib.batsLaneOutputs.bats-default;
         };
       }
