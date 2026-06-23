@@ -1,5 +1,14 @@
 default: validate lint build test
 
+# objc2/AppKit only build on Apple platforms, so the cargo and nix-binary
+# lanes can't compile off Darwin. Until the pasteboard backend is abstracted
+# behind a cross-platform trait (amarbel-llc/tacky#3), these recipes no-op
+# with a notice on non-macOS hosts so `just` still succeeds for fmt/devShell
+# work. Mirrors the flake's isDarwin output gating. Expands to a no-op `true`
+# on macOS, or an `echo`+`exit 0` on other platforms. `validate-devshell` and
+# `lint-fmt` stay ungated --- they only need Nix eval and run everywhere.
+darwin_only := if os() == "macos" { "true" } else { "echo 'skip: macOS-only recipe (objc2 builds only on Apple platforms) --- see amarbel-llc/tacky#3' >&2; exit 0" }
+
 # ---- pre-build --------------------------------------------------------------
 
 validate: validate-devshell
@@ -29,6 +38,9 @@ lint-fmt:
 
 [group("pre-build")]
 lint-clippy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     cargo clippy -- -D warnings
 
 # ---- build ------------------------------------------------------------------
@@ -37,11 +49,17 @@ build: build-cargo build-nix
 
 [group("build")]
 build-cargo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     cargo build
 
 # Sandboxed release build via the flake's packages.default. Used by CI.
 [group("build")]
 build-nix:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     nix build --print-build-logs --no-link
 
 # ---- post-build -------------------------------------------------------------
@@ -50,6 +68,9 @@ test: test-cargo test-bats
 
 [group("post-build")]
 test-cargo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     cargo test
 
 # Authoritative bats lane: runs every .bats file inside the nix sandbox
@@ -60,6 +81,7 @@ test-cargo:
 test-bats:
     #!/usr/bin/env bash
     set -euo pipefail
+    {{ darwin_only }}
     system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
     nix build --no-link --print-build-logs ".#packages.${system}.bats-default"
 
@@ -69,6 +91,7 @@ test-bats:
 test-bats-tags tag:
     #!/usr/bin/env bash
     set -euo pipefail
+    {{ darwin_only }}
     system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
     nix build --no-link --print-build-logs ".#packages.${system}.bats-{{ tag }}"
 
@@ -83,6 +106,7 @@ test-bats-tags tag:
 test-bats-local *targets="*.bats":
     #!/usr/bin/env bash
     set -euo pipefail
+    {{ darwin_only }}
     bin=$(nix build --no-link --print-out-paths .#tacky)/bin/tacky
     TACKY_BIN="$bin" \
         BATS_TEST_TIMEOUT=10 \
@@ -164,8 +188,14 @@ release new_version:
 
 # Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool.
 run-cargo *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     cargo run -- {{ args }}
 
 # Auto-rebuild on file change. Ungrouped because it's an ad-hoc dev tool.
 watch-cargo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
     cargo watch -x build
