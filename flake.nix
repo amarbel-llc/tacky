@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:amarbel-llc/nixpkgs";
-    nixpkgs-master.url = "github:NixOS/nixpkgs/d233902339c02a9c334e7e593de68855ad26c4cb";
+    nixpkgs-master.url = "github:NixOS/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
     # `nix fmt` entry point. Config lives in ./treefmt.nix.
