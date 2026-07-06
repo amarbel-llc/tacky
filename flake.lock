@@ -12,11 +12,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783307757,
-        "narHash": "sha256-ywFYtlViQaA35WTmvs3W2GRPiGv1UcPvUs5GeyJk44w=",
+        "lastModified": 1783335885,
+        "narHash": "sha256-vMoGa9iHaNmUakjE4/GKJZV4AHQ12Wi/qFpKKNMrfYs=",
         "owner": "amarbel-llc",
         "repo": "bats",
-        "rev": "00045214b19eb7bcd7623ea9676b6d78257f2544",
+        "rev": "bef4c81409645d87a7fa7a2e9ac3ee811bb8ec8d",
         "type": "github"
       },
       "original": {
@@ -147,11 +147,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1783306174,
-        "narHash": "sha256-JbJSMwgy2P3NaSeqwVvwJJyXnSId0DXHoW/SeFgQuuA=",
+        "lastModified": 1783335440,
+        "narHash": "sha256-jw+us8pErKv14SLlDXb8bQoyIlnXyRT1SK0xh1T2DY8=",
         "owner": "amarbel-llc",
         "repo": "igloo",
-        "rev": "e27cfa4e378a000899b36bc4715225adedd8a613",
+        "rev": "db999f84fd8b80a37ed189f7a61df2a2fcc2f41c",
         "type": "github"
       },
       "original": {
@@ -247,11 +247,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783231873,
-        "narHash": "sha256-cTDI249Vl2JTQ3aicT9jeJPIBlNlodpJbdO0yLigCzU=",
+        "lastModified": 1783320166,
+        "narHash": "sha256-l7C/OsjcnWDOk2K3ssj+SBduwL67LashjBqis9+t468=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "cb368fd55ced25a1fa12414b9e984cdfb1681d18",
+        "rev": "20ee15370c9256669d66968b89ee20a4b0a4e673",
         "type": "github"
       },
       "original": {
