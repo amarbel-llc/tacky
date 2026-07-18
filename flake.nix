@@ -21,11 +21,13 @@
     # batsLane was migrated out of amarbel-llc/nixpkgs's overlay into the
     # bats flake (amarbel-llc/nixpkgs#16) — consume it here, not via pkgs.
     bats = {
-      url = "github:amarbel-llc/bats";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "https://code.linenisgreat.com/bats/archive/master.tar.gz";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
+    utils.inputs.systems.follows = "nixpkgs/systems";
+    bats.inputs.igloo.inputs.systems.follows = "nixpkgs/systems";
+    bats.inputs.igloo.inputs.treefmt-nix.follows = "treefmt-nix";
   };
 
   outputs =
