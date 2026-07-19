@@ -30,11 +30,11 @@ just lint-fmt              # read-only conformist gate (builds checks.formatting
 just build                 # build-cargo + build-nix
 just test                  # test-cargo + test-bats
 just test-bats             # sandboxed bats lane (help tests only)
-just test-bats-local       # host-side bats run (all tests, real pboard)
-just test-bats-tags <tag>  # one tag (e.g. pasteboard, help)
+just debug-bats-local      # host-side bats run (all tests, real pboard)
+just debug-bats-tags <tag> # one tag (e.g. pasteboard, help)
 just codemod-fmt           # nix fmt (modifies the worktree)
 just run-cargo <args>      # cargo run -- <args>
-just watch-cargo           # cargo watch -x build
+just debug-watch-cargo     # cargo watch -x build
 just clean                 # cargo clean + rm result
 ```
 
@@ -97,7 +97,8 @@ Two lanes, by design:
   reach the per-user pboard server (`+[NSPasteboard pasteboardWithName:]`
   returns NULL inside the sandbox), so pasteboard round-trip tests are
   filtered out here.
-- **`test-bats-local`** (host-side): builds `tacky` via `nix build`, then runs
+- **`debug-bats-local`** (host-side, opt-in — `debug` verb, not in the
+  default `test` aggregate): builds `tacky` via `nix build`, then runs
   the full suite against the produced binary under the host's bats. The
   binary still runs outside the sandbox, so the real pboard server is
   reachable. This is the only way to exercise pasteboard tests end-to-end.

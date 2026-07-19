@@ -88,7 +88,7 @@ let
       # macOS nix sandbox can't reach the per-user pboard server:
       # +[NSPasteboard pasteboardWithName:] returns NULL inside the
       # build sandbox. Pasteboard tests run only via `just
-      # test-bats-local` against ./result/bin/tacky (no sandbox).
+      # debug-bats-local` against ./result/bin/tacky (no sandbox).
       bats-default = mkBatsLane { filter = "!pasteboard"; };
     };
 in

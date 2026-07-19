@@ -36,6 +36,10 @@ lint-fmt:
     system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
     nix build --no-link --print-build-logs ".#checks.${system}.formatting"
 
+# Bare `cargo clippy -- -D warnings` via the host's cargo (fast local
+# iteration). The conformist-managed clippy linter (impure lane, Darwin-only —
+# see conformistImpureEval in flake.nix) runs the same check hermetically,
+# reachable via `just lint-worktree`.
 [group("pre-build")]
 lint-clippy:
     #!/usr/bin/env bash
@@ -62,6 +66,8 @@ lint-worktree:
 
 build: build-cargo build-nix
 
+# Debug/dev build via the host's cargo (fast iteration; not sandboxed). The
+# sandboxed release build used by CI is `build-nix`.
 [group("build")]
 build-cargo:
     #!/usr/bin/env bash
@@ -81,6 +87,8 @@ build-nix:
 
 test: test-cargo test-bats
 
+# Run the Rust unit test suite via the host's cargo (fast iteration; not
+# sandboxed).
 [group("post-build")]
 test-cargo:
     #!/usr/bin/env bash
@@ -100,37 +108,11 @@ test-bats:
     system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
     nix build --no-link --print-build-logs ".#packages.${system}.bats-default"
 
-# Run only the bats files carrying `# bats file_tags=<tag>`. Tags are
-# auto-discovered at flake-eval time — see bats.nix.
-[group("post-build")]
-test-bats-tags tag:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    {{ darwin_only }}
-    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
-    nix build --no-link --print-build-logs ".#packages.${system}.bats-{{ tag }}"
-
-# Run bats against the host-built `tacky` binary, OUTSIDE the nix
-# sandbox. Necessary for pasteboard-tagged tests because the macOS
-# nix sandbox can't reach the per-user pboard server. Builds the
-# binary via `nix build` (sandboxed), reads the store-path output,
-# and runs bats against it under the host's bats from the devShell.
-# Pass file globs as args to run a subset, e.g.
-# `just test-bats-local pasteboard.bats`.
-[group("post-build")]
-test-bats-local *targets="*.bats":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    {{ darwin_only }}
-    bin=$(nix build --no-link --print-out-paths .#tacky)/bin/tacky
-    TACKY_BIN="$bin" \
-        BATS_TEST_TIMEOUT=10 \
-        bats zz-tests_bats/{{ targets }}
-
 # ---- codemod ----------------------------------------------------------------
 
 codemod-fmt: codemod-fmt-tree
 
+# Format the tree in place (repair mode) via `nix fmt`.
 [group("codemod")]
 codemod-fmt-tree:
     nix fmt
@@ -139,10 +121,12 @@ codemod-fmt-tree:
 
 clean: clean-cargo clean-nix
 
+# Remove cargo's target/ build directory.
 [group("maintenance")]
 clean-cargo:
     cargo clean
 
+# Remove the nix build result symlink.
 [group("maintenance")]
 clean-nix:
     rm -f result
@@ -199,17 +183,64 @@ release new_version:
     git tag -v "$tag"
     gh release create "$tag" --title "$header" --notes "$msg"
 
+# ---- debug --------------------------------------------------------------
+#
+# Diagnostic / opt-in dev-loop recipes (eng-design_patterns-justfile(7) `debug`
+# verb): deliberately orphaned (not part of `default`'s `test`/`build`
+# aggregates so `just`/`just test` stay fast), each throwaway/host-dependent
+# in its own way. Formerly named `test-bats-local`/`test-bats-tags`/
+# `watch-cargo`; renamed under the `debug` verb (conformist-justfile(7)
+# TASK HIERARCHY — a bare `test-*`/`build-*` leaf must sit in exactly one
+# aggregate, `debug-*` may be an orphan) — no external callers found in
+# tacky's own tree or the wider fleet (`rg watch-cargo`/`test-bats-local`/
+# `test-bats-tags` across /home/sasha/eng turned up only tacky's own
+# justfile/CLAUDE.md), so this is a bare rename, not an alias.
+
+# Run only the bats files carrying `# bats file_tags=<tag>`. Tags are
+# auto-discovered at flake-eval time — see bats.nix. Opt-in / host-dependent:
+# see the section comment above for why it's not in the `test` aggregate.
+[group("debug")]
+debug-bats-tags tag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
+    system=$(nix eval --raw --impure --expr 'builtins.currentSystem')
+    nix build --no-link --print-build-logs ".#packages.${system}.bats-{{ tag }}"
+
+# Run bats against the host-built `tacky` binary, OUTSIDE the nix
+# sandbox. Necessary for pasteboard-tagged tests because the macOS
+# nix sandbox can't reach the per-user pboard server. Builds the
+# binary via `nix build` (sandboxed), reads the store-path output,
+# and runs bats against it under the host's bats from the devShell.
+# Pass file globs as args to run a subset, e.g.
+# `just debug-bats-local pasteboard.bats`. Opt-in / host-dependent: see
+# the section comment above for why it's not in the `test` aggregate.
+[group("debug")]
+debug-bats-local *targets="*.bats":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{ darwin_only }}
+    bin=$(nix build --no-link --print-out-paths .#tacky)/bin/tacky
+    TACKY_BIN="$bin" \
+        BATS_TEST_TIMEOUT=10 \
+        bats zz-tests_bats/{{ targets }}
+
 # ---- ungrouped: developer-loop convenience (not part of `default`) ----------
 
-# Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool.
+# Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool
+# (the `run` verb may be an orphan per eng-design_patterns-justfile(7)).
 run-cargo *args:
     #!/usr/bin/env bash
     set -euo pipefail
     {{ darwin_only }}
     cargo run -- {{ args }}
 
-# Auto-rebuild on file change. Ungrouped because it's an ad-hoc dev tool.
-watch-cargo:
+# Auto-rebuild on file change via `cargo watch`. Opt-in dev-loop tool, not
+# a diagnostic per se, but there's no dedicated `watch` verb in
+# eng-design_patterns-justfile(7); `debug` is the closest fit among the
+# verbs that may be orphans.
+[group("debug")]
+debug-watch-cargo:
     #!/usr/bin/env bash
     set -euo pipefail
     {{ darwin_only }}
