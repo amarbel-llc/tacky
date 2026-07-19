@@ -8,8 +8,8 @@
 
     # conformist: the linter/formatter multiplexer (treefmt-nix's successor).
     # `nix fmt` entry point. Config lives in ./conformist.nix (+
-    # conformist.lib.presets.eng in flake.nix's outputs). Replaces the retired
-    # treefmt-nix (eng#246 — tacky was the last fleet holdout).
+    # conformist.lib.presets.{eng,eng-impure} in flake.nix's outputs). Replaces
+    # the retired treefmt-nix (eng#246 — tacky was the last fleet holdout).
     conformist = {
       url = "https://code.linenisgreat.com/conformist/archive/master.tar.gz";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
@@ -104,6 +104,43 @@
           package = conformistPkg;
         };
 
+        # Impure lane: the git-state eng-convention checks (git-remotes,
+        # git-default-branch, sweatfile, agents-md, gomod2nix) — they need a
+        # live .git / host tools, so they run against the working tree via
+        # `just lint-worktree`, exposed below as packages.conformist-impure-config.
+        # Also carries clippy (conformist#69, opt-in — not in the eng-impure
+        # roster): impure because it compiles the crate, so it can only run
+        # here, never in the sandboxed checks.formatting. clippy links the
+        # same macOS-only objc2/AppKit frameworks as `packages`/`tacky`
+        # (isDarwin, above) and can only compile on Darwin, so it is gated
+        # the same way here (lib.optional isDarwin — the list-context sibling
+        # of the lib.optionalAttrs isDarwin used for `packages` and
+        # `checks.bats-default` below): on Linux, `just lint-worktree` now
+        # runs only the eng-impure git-state checks, matching how
+        # `just lint`/`nix flake check` already omit the Darwin-only build
+        # outputs on this host. tacky pins Rust via rust-overlay (not plain
+        # nixpkgs), so `packages` is overridden to the same rustToolchain the
+        # rest of the flake builds with (module default would otherwise
+        # resolve cargo/clippy/rustc from `pkgs`, i.e. plain nixpkgs — see
+        # clippy.nix's own guidance for a pinned-toolchain consumer).
+        # `deny = [ "warnings" ]` (the module default) matches the old bare
+        # `cargo clippy -- -D warnings` in the justfile's lint-clippy recipe.
+        conformistImpureEval = conformist.lib.evalModule pkgs {
+          imports = [
+            conformist.lib.presets.eng-impure
+          ]
+          ++ lib.optional isDarwin {
+            linters.clippy.enable = true;
+            linters.clippy.workspace = true;
+            linters.clippy.packages = [
+              rustToolchain
+              pkgs.gcc
+            ];
+          };
+          package = conformistPkg;
+          projectRootFile = "flake.nix";
+        };
+
         bats-libs = bats.packages.${system}.bats-libs;
 
         # Filter zz-tests_bats so bats-lane store paths only change when
@@ -135,7 +172,12 @@
           conformist-pre-commit = conformistEval.config.build.preCommit;
           # Its merge-repair sibling: `nix build .#conformist-repair`.
           conformist-repair = conformistEval.config.build.repair;
-          # The raw conformist binary.
+          # The generated impure-lane config (git-state checks + clippy),
+          # consumed by `just lint-worktree` to run `conformist check
+          # --config-file <this> --tree-root .`.
+          conformist-impure-config = conformistImpureEval.config.build.configFile;
+          # The raw conformist binary, so `just lint-worktree` can
+          # `nix run .#conformist -- check ...`.
           conformist = conformistPkg;
         }
         // lib.optionalAttrs isDarwin (

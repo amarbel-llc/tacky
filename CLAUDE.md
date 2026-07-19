@@ -42,7 +42,13 @@ Formatting is driven by **conformist** (treefmt-nix's successor; config in
 `conformist.nix` + `conformist.lib.presets.eng`): rustfmt, nixfmt, taplo
 (toml), yamlfmt (yaml), mdformat (md), and just (justfile). `nix fmt` rewrites
 the worktree; `lint-fmt` builds the `checks.formatting` derivation and fails
-loudly without rewriting — that's the CI / merge-hook gate.
+loudly without rewriting — that's the CI / merge-hook gate. clippy is wired as
+an opt-in conformist linter too (impure lane, Darwin-only — it compiles the
+crate, and objc2/AppKit only build on Apple platforms; see
+`conformistImpureEval` in `flake.nix`), reachable via `just lint-worktree`
+(not yet folded into the default `lint` aggregate — tacky has no sweatfile
+yet). On Linux, `lint-worktree` runs only the eng-impure git-state checks;
+the clippy path is unverified there and needs a Darwin host to exercise.
 
 ### CLI Usage
 

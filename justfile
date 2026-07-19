@@ -43,6 +43,21 @@ lint-clippy:
     {{ darwin_only }}
     cargo clippy -- -D warnings
 
+lint-impure: lint-worktree
+
+# The impure eng checks (git remotes, sweatfile, agents-md, gomod2nix) plus
+# clippy (conformist#69, Darwin-only — see conformistImpureEval in flake.nix)
+# against the working tree, where .git is available --- they can't run in the
+# sandboxed checks.formatting. Not yet folded into the `lint` aggregate: tacky
+# has no sweatfile yet, so sweatfile/agents-md findings are expected (see
+# conformist.lib.presets.eng-impure).
+[group("pre-build")]
+lint-worktree:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cfg=$(nix build --no-link --print-out-paths '.#conformist-impure-config')
+    nix run '.#conformist' -- check --config-file "$cfg" --tree-root .
+
 # ---- build ------------------------------------------------------------------
 
 build: build-cargo build-nix
