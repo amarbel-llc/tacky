@@ -26,7 +26,7 @@ chains them into a single build-and-verify pipeline.
 just                       # default: validate lint build test
 just validate              # validate-devshell (nix build --no-link devShell)
 just lint                  # lint-fmt + lint-clippy
-just lint-fmt              # read-only treefmt gate (builds checks.formatting)
+just lint-fmt              # read-only conformist gate (builds checks.formatting)
 just build                 # build-cargo + build-nix
 just test                  # test-cargo + test-bats
 just test-bats             # sandboxed bats lane (help tests only)
@@ -38,7 +38,9 @@ just watch-cargo           # cargo watch -x build
 just clean                 # cargo clean + rm result
 ```
 
-Formatting is driven by treefmt-nix (config: `treefmt.nix`). `nix fmt` rewrites
+Formatting is driven by **conformist** (treefmt-nix's successor; config in
+`conformist.nix` + `conformist.lib.presets.eng`): rustfmt, nixfmt, taplo
+(toml), yamlfmt (yaml), mdformat (md), and just (justfile). `nix fmt` rewrites
 the worktree; `lint-fmt` builds the `checks.formatting` derivation and fails
 loudly without rewriting — that's the CI / merge-hook gate.
 

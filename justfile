@@ -26,9 +26,9 @@ validate-devshell:
 lint: lint-fmt lint-clippy
 
 # Read-only formatting gate: builds the `checks.formatting` derivation,
-# which runs treefmt against a /nix/store snapshot of the source tree
+# which runs conformist against a /nix/store snapshot of the source tree
 # and fails if anything would change. Does NOT modify files in the
-# worktree --- the modifying counterpart is `codemod-fmt-treefmt`.
+# worktree --- the modifying counterpart is `codemod-fmt-tree`.
 [group("pre-build")]
 lint-fmt:
     #!/usr/bin/env bash
@@ -114,10 +114,10 @@ test-bats-local *targets="*.bats":
 
 # ---- codemod ----------------------------------------------------------------
 
-codemod-fmt: codemod-fmt-treefmt
+codemod-fmt: codemod-fmt-tree
 
 [group("codemod")]
-codemod-fmt-treefmt:
+codemod-fmt-tree:
     nix fmt
 
 # ---- maintenance ------------------------------------------------------------

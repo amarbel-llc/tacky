@@ -6,9 +6,15 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
-    # `nix fmt` entry point. Config lives in ./treefmt.nix.
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    # conformist: the linter/formatter multiplexer (treefmt-nix's successor).
+    # `nix fmt` entry point. Config lives in ./conformist.nix (+
+    # conformist.lib.presets.eng in flake.nix's outputs). Replaces the retired
+    # treefmt-nix (eng#246 — tacky was the last fleet holdout).
+    conformist = {
+      url = "https://code.linenisgreat.com/conformist/archive/master.tar.gz";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
@@ -27,7 +33,7 @@
     };
     utils.inputs.systems.follows = "nixpkgs/systems";
     bats.inputs.igloo.inputs.systems.follows = "nixpkgs/systems";
-    bats.inputs.igloo.inputs.treefmt-nix.follows = "treefmt-nix";
+    bats.inputs.conformist.follows = "conformist";
   };
 
   outputs =
@@ -37,7 +43,7 @@
       nixpkgs-master,
       utils,
       rust-overlay,
-      treefmt-nix,
+      conformist,
       bats,
       ...
     }:
@@ -84,7 +90,19 @@
           env.TACKY_COMMIT = tackyCommit;
         };
 
-        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+        conformistPkg = conformist.packages.${system}.default;
+
+        # Pure lane: the eng preset (sandboxed eng-convention linters) + this
+        # repo's formatters/excludes (./conformist.nix). Drives `nix fmt`
+        # (build.wrapper), the sandboxed checks.formatting (build.check), and
+        # the conformist-pre-commit hook (build.preCommit).
+        conformistEval = conformist.lib.evalModule pkgs {
+          imports = [
+            conformist.lib.presets.eng
+            ./conformist.nix
+          ];
+          package = conformistPkg;
+        };
 
         bats-libs = bats.packages.${system}.bats-libs;
 
@@ -110,7 +128,17 @@
         };
       in
       {
-        packages = lib.optionalAttrs isDarwin (
+        packages = {
+          # The store-pinned `conformist --staged --exit-zero-on-fix` hook
+          # from the pure-lane config; the sweatfile (if/when tacky adds one)
+          # would name it as the per-commit hook.
+          conformist-pre-commit = conformistEval.config.build.preCommit;
+          # Its merge-repair sibling: `nix build .#conformist-repair`.
+          conformist-repair = conformistEval.config.build.repair;
+          # The raw conformist binary.
+          conformist = conformistPkg;
+        }
+        // lib.optionalAttrs isDarwin (
           {
             default = tacky;
             inherit tacky;
@@ -126,17 +154,21 @@
             pkgs.uv
             pkgs.bats
             pkgs.gum
+            conformistPkg
+            conformistEval.config.build.preCommit
+            conformistEval.config.build.repair
           ];
           BATS_LIB_PATH = bats-libs.batsLibPath;
         };
 
-        # `nix fmt` — runs treefmt across the worktree using ./treefmt.nix.
-        formatter = treefmtEval.config.build.wrapper;
+        # `nix fmt` — runs the generated conformist wrapper (config +
+        # every formatter baked as /nix/store paths) across the worktree.
+        formatter = conformistEval.config.build.wrapper;
 
         # `nix flake check` — read-only formatting gate (sandbox-pure)
         # plus the default bats lane.
         checks = {
-          formatting = treefmtEval.config.build.check self;
+          formatting = conformistEval.config.build.check self;
         }
         // lib.optionalAttrs isDarwin {
           bats-default = batsLib.batsLaneOutputs.bats-default;
