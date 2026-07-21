@@ -15,6 +15,7 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
+    conformist.inputs.igloo.follows = "bats/igloo";
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
