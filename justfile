@@ -16,6 +16,8 @@ validate: validate-devshell
 # Verify the devShell evaluates and builds without errors. Catches
 # rust-overlay / nixpkgs follows regressions that the prod-binary build
 # can mask. No store-output usage --- just a build-check.
+#
+# build the devShell to verify it evaluates and builds
 [group("pre-build")]
 validate-devshell:
     #!/usr/bin/env bash
@@ -29,6 +31,8 @@ lint: lint-fmt lint-clippy
 # which runs conformist against a /nix/store snapshot of the source tree
 # and fails if anything would change. Does NOT modify files in the
 # worktree --- the modifying counterpart is `codemod-fmt-tree`.
+#
+# check formatting without modifying the worktree
 [group("pre-build")]
 lint-fmt:
     #!/usr/bin/env bash
@@ -40,6 +44,8 @@ lint-fmt:
 # iteration). The conformist-managed clippy linter (impure lane, Darwin-only —
 # see conformistImpureEval in flake.nix) runs the same check hermetically,
 # reachable via `just lint-worktree`.
+#
+# run cargo clippy with warnings denied
 [group("pre-build")]
 lint-clippy:
     #!/usr/bin/env bash
@@ -55,6 +61,8 @@ lint-impure: lint-worktree
 # sandboxed checks.formatting. Not yet folded into the `lint` aggregate: tacky
 # has no sweatfile yet, so sweatfile/agents-md findings are expected (see
 # conformist.lib.presets.eng-impure).
+#
+# run the impure eng checks and clippy against the working tree
 [group("pre-build")]
 lint-worktree:
     #!/usr/bin/env bash
@@ -68,6 +76,8 @@ build: build-cargo build-nix
 
 # Debug/dev build via the host's cargo (fast iteration; not sandboxed). The
 # sandboxed release build used by CI is `build-nix`.
+#
+# build a debug binary with the host's cargo
 [group("build")]
 build-cargo:
     #!/usr/bin/env bash
@@ -89,6 +99,8 @@ test: test-cargo test-bats
 
 # Run the Rust unit test suite via the host's cargo (fast iteration; not
 # sandboxed).
+#
+# run the Rust unit test suite with the host's cargo
 [group("post-build")]
 test-cargo:
     #!/usr/bin/env bash
@@ -100,6 +112,8 @@ test-cargo:
 # against a freshly-built `tacky` binary. Tests use isolated, uniquely
 # named NSPasteboards (via the --pasteboard flag) so they never touch
 # the user's real clipboard.
+#
+# run the sandboxed bats lane against a freshly-built binary
 [group("post-build")]
 test-bats:
     #!/usr/bin/env bash
@@ -199,6 +213,8 @@ release new_version:
 # Run only the bats files carrying `# bats file_tags=<tag>`. Tags are
 # auto-discovered at flake-eval time — see bats.nix. Opt-in / host-dependent:
 # see the section comment above for why it's not in the `test` aggregate.
+#
+# run only the bats files carrying a given file_tags tag
 [group("debug")]
 debug-bats-tags tag:
     #!/usr/bin/env bash
@@ -215,6 +231,8 @@ debug-bats-tags tag:
 # Pass file globs as args to run a subset, e.g.
 # `just debug-bats-local pasteboard.bats`. Opt-in / host-dependent: see
 # the section comment above for why it's not in the `test` aggregate.
+#
+# run bats against the host-built binary, outside the nix sandbox
 [group("debug")]
 debug-bats-local *targets="*.bats":
     #!/usr/bin/env bash
@@ -229,6 +247,8 @@ debug-bats-local *targets="*.bats":
 
 # Pass-through to `cargo run`. Ungrouped because it's an ad-hoc dev tool
 # (the `run` verb may be an orphan per eng-design_patterns-justfile(7)).
+#
+# pass arguments through to `cargo run`
 run-cargo *args:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -239,6 +259,8 @@ run-cargo *args:
 # a diagnostic per se, but there's no dedicated `watch` verb in
 # eng-design_patterns-justfile(7); `debug` is the closest fit among the
 # verbs that may be orphans.
+#
+# auto-rebuild on file change via `cargo watch`
 [group("debug")]
 debug-watch-cargo:
     #!/usr/bin/env bash
