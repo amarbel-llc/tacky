@@ -85,7 +85,9 @@ build-cargo:
     {{ darwin_only }}
     cargo build
 
-# Sandboxed release build via the flake's packages.default. Used by CI.
+# Used by CI.
+#
+# sandboxed release build via the flake's packages.default
 [group("build")]
 build-nix:
     #!/usr/bin/env bash
@@ -126,7 +128,7 @@ test-bats:
 
 codemod-fmt: codemod-fmt-tree
 
-# Format the tree in place (repair mode) via `nix fmt`.
+# format the tree in place (repair mode) via `nix fmt`
 [group("codemod")]
 codemod-fmt-tree:
     nix fmt
@@ -135,24 +137,26 @@ codemod-fmt-tree:
 
 clean: clean-cargo clean-nix
 
-# Remove cargo's target/ build directory.
+# remove cargo's target/ build directory
 [group("maintenance")]
 clean-cargo:
     cargo clean
 
-# Remove the nix build result symlink.
+# remove the nix build result symlink
 [group("maintenance")]
 clean-nix:
     rm -f result
 
 # ---- maint ------------------------------------------------------------------
 
-# Rewrite TACKY_VERSION in version.env. Staging and committing is release's responsibility.
+# Staging and committing is release's responsibility.
+#
+# rewrite TACKY_VERSION in version.env
 [group("maint")]
 bump-version new_version:
     sed -E -i'' "s/^(export TACKY_VERSION)=.*/\1={{ new_version }}/" version.env
 
-# Create a signed annotated tag from the current version.env and push it.
+# create a signed annotated tag from the current version.env and push it
 [group("maint")]
 tag message:
     #!/usr/bin/env bash
@@ -165,7 +169,7 @@ tag message:
     gum log --level info "Pushed $tag"
     git tag -v "$tag"
 
-# Orchestrate a full release: bump version.env, commit, tag, gh release create.
+# orchestrate a full release: bump version.env, commit, tag, gh release create
 [group("maint")]
 release new_version:
     #!/usr/bin/env bash
