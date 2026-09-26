@@ -14,11 +14,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788916149,
-        "narHash": "sha256-eAL/nOm+zlXrNGZncge3ugwWaHTMHVQMNTNtHTXjzqw=",
-        "rev": "d69889488ceb876731a13eea52b161355fd744bf",
+        "lastModified": 1790457428,
+        "narHash": "sha256-iqree/BSA1CrT0Uwn1EdrNVcq87aaps0DHsenjBOq2o=",
+        "rev": "ab0bef13e8b6d1ad108906884ec29324e0236d91",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/bats/archive/d69889488ceb876731a13eea52b161355fd744bf.tar.gz"
+        "url": "https://code.linenisgreat.com/bats/archive/ab0bef13e8b6d1ad108906884ec29324e0236d91.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -109,11 +109,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788748258,
-        "narHash": "sha256-BdA4C8aTcTjWzC5F8bgrHEmnqOfy0cjRqNi2jINXBYo=",
-        "rev": "7ed393cf6c3d4673ed7c4a982b653552a6a52db6",
+        "lastModified": 1790455909,
+        "narHash": "sha256-HjB2YwpyjoKuOI9ZmbsSy6ov4AYhsXdu04i/3RY4UsM=",
+        "rev": "655521ec7276e0cfb490794dd3e48046f4b6f4ee",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/conformist/archive/7ed393cf6c3d4673ed7c4a982b653552a6a52db6.tar.gz"
+        "url": "https://code.linenisgreat.com/conformist/archive/655521ec7276e0cfb490794dd3e48046f4b6f4ee.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -178,11 +178,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788745159,
-        "narHash": "sha256-zxCue/vpiowGKW2h1YdMlxejEH7Zc+PFcISYXo9NDDw=",
-        "rev": "b13d154cb7125df8c584c1f5d7796a149152f025",
+        "lastModified": 1790088505,
+        "narHash": "sha256-g0hgmyuF5JzAtfmSW9jbE/FBiHrlAHFgtAca5r+j/Eg=",
+        "rev": "021dddff6199e05f7dd953df1e4d88a95ebd5235",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/igloo/archive/b13d154cb7125df8c584c1f5d7796a149152f025.tar.gz"
+        "url": "https://code.linenisgreat.com/igloo/archive/021dddff6199e05f7dd953df1e4d88a95ebd5235.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -260,11 +260,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788938153,
-        "narHash": "sha256-czAKV0qN7TtdlGIREdDAJmoATGH0lfF7wNO8OMVToCw=",
+        "lastModified": 1790407471,
+        "narHash": "sha256-M8elY2UShg4ZuLTiRLEHO+ae5xQFp3/ReQdxp/R+1UU=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "5280ed136f4359ce3f977b0c4c4dab6a34254201",
+        "rev": "4e9bb05a9ab6c37dc74c22974ebed6e36dc73eb2",
         "type": "github"
       },
       "original": {
